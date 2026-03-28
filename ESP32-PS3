@@ -1,0 +1,159 @@
+/**********************************************************************
+ *                                                                    *
+ *    *****   ******  **   **      **       ***       ******          *
+ *   **      **      *** ***      **      **   **     **    **        *
+ *   **      **      ** * **     **      **     **    **    **        *
+ *   **      ******  **   **    **       *********    *******         *
+ *   **      **      **   **   **        **     **    **    **        *
+ *    *****  **      **   **  ********   **     **    ******          *
+ *                                                                    *
+ *                         C F M   L a b                              *
+ *                                                                    *
+ * Project: PS3-controlled 2-motor robot                              *
+ * Author:  Your Name                                                 *
+ * Date:    2026-03-28                                                *
+ * Description: This Arduino sketch controls a robot using a PS3      *
+ *              controller. Four movement directions and stop are     *
+ *              implemented. PWM/DAC pins control motor speed.    ,   *
+ *                                                                    *
+ **********************************************************************/
+
+// ================= PIN CONFIGURATION =================
+// Right motor control pins
+#define rm1   // Right motor input 1
+#define rm2   // Right motor input 2
+
+// Left motor control pins
+#define lm1   // Left motor input 1
+#define lm2   // Left motor input 2
+
+// Motor speed control pins (DAC)
+#define v1    // Right motor speed
+#define v2    // Left motor speed
+
+#include <Ps3Controller.h> 
+
+// ================= GLOBAL VARIABLES =================
+int yz = 0;  // Last Y-axis reading (left stick)
+int xz = 0;  // Last X-axis reading (right stick)
+
+// ================= MOTOR CONTROL FUNCTIONS =================
+
+// Move forward
+void Forward() {
+  digitalWrite(rm1, HIGH);
+  digitalWrite(rm2, LOW);
+  digitalWrite(lm1, HIGH);
+  digitalWrite(lm2, LOW);
+  
+  dacWrite(v1, 255);
+  dacWrite(v2, 255);
+}
+
+// Move backward
+void Backward() {
+  digitalWrite(rm1, LOW);
+  digitalWrite(rm2, HIGH);
+  digitalWrite(lm1, LOW);
+  digitalWrite(lm2, HIGH);
+  
+  dacWrite(v1, 255);
+  dacWrite(v2, 255);
+}
+
+// Turn left
+void Left() {
+  digitalWrite(rm1, LOW);
+  digitalWrite(rm2, HIGH);
+  digitalWrite(lm1, HIGH);
+  digitalWrite(lm2, LOW);
+  
+  dacWrite(v1, 255);
+  dacWrite(v2, 255);
+}
+
+// Turn right
+void Right() {
+  digitalWrite(rm1, HIGH);
+  digitalWrite(rm2, LOW);
+  digitalWrite(lm1, LOW);
+  digitalWrite(lm2, HIGH);
+  
+  dacWrite(v1, 255);
+  dacWrite(v2, 255);
+}
+
+// Stop both motors
+void STOP() {
+  digitalWrite(rm1, LOW);
+  digitalWrite(rm2, LOW);
+  digitalWrite(lm1, LOW);
+  digitalWrite(lm2, LOW);
+  
+  dacWrite(v1, 255);
+  dacWrite(v2, 255);
+}
+
+// ================= SETUP =================
+void setup() {
+  // Initialize motor pins as outputs
+  pinMode(rm1, OUTPUT);
+  pinMode(rm2, OUTPUT);
+  pinMode(lm1, OUTPUT);
+  pinMode(lm2, OUTPUT);
+  
+  // Initialize motor speed pins as outputs (DAC)
+  pinMode(v1, OUTPUT);
+  pinMode(v2, OUTPUT);
+
+  // Start serial communication for debugging
+  Serial.begin(9600);
+
+  // Connect to PS3 controller (replace MAC with your controller)
+  Ps3.begin("    "); // adress = **:**:**:**:**:**
+  Serial.println("Ready.");
+}
+
+// ================= MAIN LOOP =================
+void loop() {
+  // Read analog stick positions
+  int y = Ps3.data.analog.stick.ly;  // Left stick: forward/backward
+  int x = Ps3.data.analog.stick.rx;  // Right stick: left/right
+
+  // Only print if values changed (reduce serial spam)
+  if ((x != xz) || (y != yz)) {
+    Serial.print("y=");
+    Serial.println(y);
+    Serial.print("x=");
+    Serial.println(x);
+  }
+
+  // Check if PS3 controller is connected
+  if (Ps3.isConnected()) {
+    // Movement logic based on sticks/buttons
+    if (y < -20 || Ps3.data.button.triangle || Ps3.data.analog.button.up) {
+      Forward();  // Move forward
+      Serial.println("Forward");
+    }
+    else if (y > 20 || Ps3.data.button.cross || Ps3.data.analog.button.down) {
+      Backward();  // Move backward
+      Serial.println("arrière");
+    }
+    else if (x < -20 || Ps3.data.button.square || Ps3.data.analog.button.left) {
+      Right();  // Turn right
+      Serial.println("Right");
+    }
+    else if (x > 20 || Ps3.data.button.circle || Ps3.data.analog.button.right) {
+      Left();  // Turn left
+      Serial.println("Left");
+    }
+    else {
+      STOP();  // Stop motors
+      Serial.println("stop");
+    }
+  }
+
+  // Save last positions for change detection
+  yz = y;
+  xz = x;
+}
