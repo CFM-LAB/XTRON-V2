@@ -1,0 +1,131 @@
+/**********************************************************************
+ *                                                                    *
+ *    *****   ******  **   **      **       ***       ******          *
+ *   **      **      *** ***      **      **   **     **    **        *
+ *   **      **      ** * **     **      **     **    **    **        *
+ *   **      ******  **   **    **       *********    *******         *
+ *   **      **      **   **   **        **     **    **    **        *
+ *    *****  **      **   **  ********   **     **    ******          *
+ *                                                                    *
+ *                         C F M   L a b                              *
+ *                                                                    *
+ * Project: PS4 Controlled Motor Driver                               *
+ * Author:  Your Name                                                 *
+ * Date:    2026-03-28                                                *
+ * Description: Control 4 motors via PS4 controller over Bluetooth    *
+ *              using ESP32 DAC outputs.                              *
+ *                                                                    *
+ **********************************************************************/
+
+#include <PS4Controller.h>
+#include "esp_bt.h"  // Required to set a fixed ESP32 MAC address
+
+// ================= PIN CONFIGURATION =================
+// Right motor pins
+#define rm1 
+#define rm2 
+
+// Left motor pins
+#define lm1
+#define lm2 
+
+// Motor DAC pins
+#define v1    // DAC1
+#define v2    // DAC2
+
+// ================= GLOBAL VARIABLES =================
+int yz = 0;  // Previous Y stick value
+int xz = 0;  // Previous X stick value
+
+// ================= MOTOR CONTROL FUNCTIONS =================
+
+// Move forward
+void AVANT() {
+  digitalWrite(rm1, HIGH); digitalWrite(rm2, LOW);
+  digitalWrite(lm1, HIGH); digitalWrite(lm2, LOW);
+  dacWrite(v1, 255); dacWrite(v2, 255);
+}
+
+// Move backward
+void ARRIERE() {
+  digitalWrite(rm1, LOW); digitalWrite(rm2, HIGH);
+  digitalWrite(lm1, LOW); digitalWrite(lm2, HIGH);
+  dacWrite(v1, 255); dacWrite(v2, 255);
+}
+
+// Turn right
+void DROITE() {
+  digitalWrite(rm1, HIGH); digitalWrite(rm2, LOW);
+  digitalWrite(lm1, LOW); digitalWrite(lm2, HIGH);
+  dacWrite(v1, 255); dacWrite(v2, 255);
+}
+
+// Turn left
+void GAUCHE() {
+  digitalWrite(rm1, LOW); digitalWrite(rm2, HIGH);
+  digitalWrite(lm1, HIGH); digitalWrite(lm2, LOW);
+  dacWrite(v1, 255); dacWrite(v2, 255);
+}
+
+// Stop all motors
+void STOP() {
+  digitalWrite(rm1, LOW); digitalWrite(rm2, LOW);
+  digitalWrite(lm1, LOW); digitalWrite(lm2, LOW);
+  dacWrite(v1, 0); dacWrite(v2, 0);
+}
+
+// ================= SETUP =================
+void setup() {
+  // Initialize serial monitor for debugging
+  Serial.begin(115200);
+
+  // Configure motor control pins as outputs
+  pinMode(rm1, OUTPUT); pinMode(rm2, OUTPUT);
+  pinMode(lm1, OUTPUT); pinMode(lm2, OUTPUT);
+
+  // -------- FIXED ESP32 MAC ADDRESS --------
+  // Example MAC: **:**:**:**:**:**
+  uint8_t fixedMac[6] = {0x**, 0x**, 0x**, 0x**, 0x**, 0x**};
+  esp_base_mac_addr_set(fixedMac);
+
+  // Initialize PS4 controller over Bluetooth
+  PS4.begin();
+  Serial.println("Waiting for PS4 controller (hold PS + SHARE)...");
+}
+
+// ================= MAIN LOOP =================
+void loop() {
+  // Exit loop early if PS4 controller not connected
+  if (!PS4.isConnected()) return;
+
+  // Read analog sticks
+  int y = PS4.LStickY();  // Forward/backward
+  int x = PS4.RStickX();  // Left/right
+
+  // Print values only when changed
+  if ((x != xz) || (y != yz)) {
+    Serial.print("y="); Serial.println(y);
+    Serial.print("x="); Serial.println(x);
+  }
+
+  // -------- MOVEMENT LOGIC --------
+  if (y < -20 || PS4.Triangle() || PS4.Up()) {
+    AVANT(); Serial.println("avant");
+  }
+  else if (y > 20 || PS4.Cross() || PS4.Down()) {
+    ARRIERE(); Serial.println("arriere");
+  }
+  else if (x < -20 || PS4.Square() || PS4.Left()) {
+    GAUCHE(); Serial.println("gauche");
+  }
+  else if (x > 20 || PS4.Circle() || PS4.Right()) {
+    DROITE(); Serial.println("droite");
+  }
+  else {
+    STOP(); Serial.println("stop");
+  }
+
+  // Store previous values for change detection
+  yz = y;
+  xz = x;
+}
