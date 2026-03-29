@@ -1,0 +1,41 @@
+/**********************************************************************
+ *                                                                    *
+ *    *****   ******  **   **      **       ***       ******          *
+ *   **      **      *** ***      **      **   **     **    **        *
+ *   **      **      ** * **     **      **     **    **    **        *
+ *   **      ******  **   **    **       *********    *******         *
+ *   **      **      **   **   **        **     **    **    **        *
+ *    *****  **      **   **  ********   **     **    ******          *
+ *                                                                    *
+ *                         C F M   L a b                              *
+ *                                                                    *
+ * Project: PS3 Controller Address Printer                            *
+ * Author:  Your Name                                                 *
+ * Date:    2026-03-28                                                *
+ * Description: This simple Arduino sketch connects to a PS3          *
+ *              controller and prints its MAC address to Serial       *
+ *              Monitor. Useful for debugging or initial setup.       *
+ *                                                                    *
+ **********************************************************************/
+
+#include <Ps3Controller.h>  // Include the PS3 controller library
+
+// ================= SETUP =================
+void setup() {
+    // Start serial communication at 115200 baud for fast debugging
+    Serial.begin(115200);
+    
+    // Initialize the PS3 controller connection
+    Ps3.begin();
+    
+    // Get the PS3 controller MAC address and print it
+    String address = Ps3.getAddress();
+    Serial.print("PS3 Controller MAC Address: ");
+    Serial.println(address);
+}
+
+// ================= MAIN LOOP =================
+void loop() {
+    // Required by Arduino, even if left empty
+  
+}
